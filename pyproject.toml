@@ -7,15 +7,17 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
-pandas = "^1.4.4"
+isort = "^5.10.1"
 numpy = "^1.23.2"
 openpyxl = "^3.0.10"
-isort = "^5.10.1"
+pandas = "^1.4.4"
+python = ">=3.9,<3.11"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.8.0"
 mypy = "^0.971"
+openpyxl-stubs = "^0.1.21"
+pandas-stubs = "^1.4.3.220829"
 
 [build-system]
 requires = ["poetry-core"]

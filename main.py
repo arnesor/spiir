@@ -28,7 +28,6 @@ def fix_splitting(dff: pd.DataFrame) -> pd.DataFrame:
 def format_spiir_sheet(filename: str) -> None:
     wb = openpyxl.load_workbook(filename)
     ws = wb["Sheet1"]
-    max_row = ws.max_row
 
     my_format = "# ##0;-# ##0;0;@"
     for row in ws.iter_rows(min_row=2, max_row=70, min_col=2, max_col=14):
@@ -43,7 +42,11 @@ def format_spiir_sheet(filename: str) -> None:
         )
     ws.column_dimensions = dim_holder
 
-    ws.cell(row=max_row + 1, column=2).value = f"=SUM(B2:B{max_row})"
+    for col in range(ws.min_column + 1, ws.max_column):
+        col_letter = get_column_letter(col)
+        sum_string = f"=SUM({col_letter}2:{col_letter}{ws.max_row})"
+        ws.cell(row=ws.max_row + 1, column=col).value = sum_string
+
     wb.save("formatted.xlsx")
 
 
@@ -100,7 +103,7 @@ def main():
     df2.reset_index(drop=True, inplace=True)
     print(f"Shape after fixing: {df2.shape}")
 
-    df2 = df2[(df2["CategoryType"] != "Exclude") & (df2["Extraordinary"] is False)]
+    df2 = df2[(df2["CategoryType"] != "Exclude") & (df2["Extraordinary"] == False)]
 
     df2_2021 = df2[df2["CorrectedDate"].dt.year == 2022]
 

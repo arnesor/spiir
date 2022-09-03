@@ -65,7 +65,7 @@ requirements_deprecated_finder = ["pip-api", "pipreqs"]
 name = "mypy"
 version = "0.971"
 description = "Optional static typing for Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -83,7 +83,7 @@ reports = ["lxml"]
 name = "mypy-extensions"
 version = "0.4.3"
 description = "Experimental type system extensions for programs checked with the mypy typechecker."
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
@@ -107,6 +107,19 @@ python-versions = ">=3.6"
 et-xmlfile = "*"
 
 [[package]]
+name = "openpyxl-stubs"
+version = "0.1.21"
+description = "Type stubs for openpyxl"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+mypy = ">=0.720"
+openpyxl = ">=3.0.0"
+typing-extensions = ">=3.7.4"
+
+[[package]]
 name = "pandas"
 version = "1.4.4"
 description = "Powerful data structures for data analysis, time series, and statistics"
@@ -126,6 +139,17 @@ pytz = ">=2020.1"
 
 [package.extras]
 test = ["hypothesis (>=5.5.3)", "pytest (>=6.0)", "pytest-xdist (>=1.31)"]
+
+[[package]]
+name = "pandas-stubs"
+version = "1.4.3.220829"
+description = "Type annotations for pandas"
+category = "main"
+optional = false
+python-versions = ">=3.8,<3.11"
+
+[package.dependencies]
+types-pytz = ">=2022.1.1"
 
 [[package]]
 name = "pathspec"
@@ -178,22 +202,30 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
+
+[[package]]
+name = "types-pytz"
+version = "2022.2.1.0"
+description = "Typing stubs for pytz"
+category = "main"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "typing-extensions"
 version = "4.3.0"
 description = "Backported and Experimental Type Hints for Python 3.7+"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 
 [metadata]
 lock-version = "1.1"
-python-versions = "^3.9"
-content-hash = "d7cbc82f87fe7aebf97940bd884cca98a8aec0d8c75f4b7c1ef5beb50963ff98"
+python-versions = ">=3.9,<3.11"
+content-hash = "a42027d8c8a127182b7662f336d32f4065f0da436502b52de4b6461a19175d1d"
 
 [metadata.files]
 black = [
@@ -300,6 +332,10 @@ openpyxl = [
     {file = "openpyxl-3.0.10-py2.py3-none-any.whl", hash = "sha256:0ab6d25d01799f97a9464630abacbb34aafecdcaa0ef3cba6d6b3499867d0355"},
     {file = "openpyxl-3.0.10.tar.gz", hash = "sha256:e47805627aebcf860edb4edf7987b1309c1b3632f3750538ed962bbcc3bd7449"},
 ]
+openpyxl-stubs = [
+    {file = "openpyxl-stubs-0.1.21.tar.gz", hash = "sha256:8a8c433e4874bae3cc2bfcb0d7b9e24e82c666f7e5478ff35d86c54b7cbe2551"},
+    {file = "openpyxl_stubs-0.1.21-py3-none-any.whl", hash = "sha256:8b67d71707dffd881cef6743f19950b55227dedc1455a1456f1315c995a3754c"},
+]
 pandas = [
     {file = "pandas-1.4.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:799e6a25932df7e6b1f8dabf63de064e2205dc309abb75956126a0453fd88e97"},
     {file = "pandas-1.4.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:7cd1d69a387f7d5e1a5a06a87574d9ef2433847c0e78113ab51c84d3a8bcaeaa"},
@@ -322,6 +358,10 @@ pandas = [
     {file = "pandas-1.4.4-cp39-cp39-win32.whl", hash = "sha256:050aada67a5ec6699a7879e769825b510018a95fb9ac462bb1867483d0974a97"},
     {file = "pandas-1.4.4-cp39-cp39-win_amd64.whl", hash = "sha256:8d4d2fe2863ecddb0ba1979bdda26c8bc2ea138f5a979abe3ba80c0fa4015c91"},
     {file = "pandas-1.4.4.tar.gz", hash = "sha256:ab6c0d738617b675183e5f28db32b5148b694ad9bba0a40c3ea26d96b431db67"},
+]
+pandas-stubs = [
+    {file = "pandas-stubs-1.4.3.220829.tar.gz", hash = "sha256:f49f74f496e1b10c42218799067c23603c37e6e1cc55ca24f6ea23c46d0119f9"},
+    {file = "pandas_stubs-1.4.3.220829-py3-none-any.whl", hash = "sha256:7a1262c20c747515e2ed15a6cefce292ddce23c140828dfdcbcf97f1f3e4bd03"},
 ]
 pathspec = [
     {file = "pathspec-0.10.1-py3-none-any.whl", hash = "sha256:46846318467efc4556ccfd27816e004270a9eeeeb4d062ce5e6fc7a87c573f93"},
@@ -346,6 +386,10 @@ six = [
 tomli = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
     {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
+]
+types-pytz = [
+    {file = "types-pytz-2022.2.1.0.tar.gz", hash = "sha256:47cfb19c52b9f75896440541db392fd312a35b279c6307a531db71152ea63e2b"},
+    {file = "types_pytz-2022.2.1.0-py3-none-any.whl", hash = "sha256:50ead2254b524a3d4153bc65d00289b66898060d2938e586170dce918dbaf3b3"},
 ]
 typing-extensions = [
     {file = "typing_extensions-4.3.0-py3-none-any.whl", hash = "sha256:25642c956049920a5aa49edcdd6ab1e06d7e5d467fc00e0506c44ac86fbfca02"},
