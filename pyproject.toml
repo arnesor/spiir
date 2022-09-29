@@ -5,6 +5,7 @@ description = "Create an Excel sheet overview of spending from https://spiir.com
 authors = ["Arne Sørli"]
 license = "MIT"
 readme = "README.md"
+packages = [{include = "spiir"}]
 
 [tool.poetry.dependencies]
 isort = "^5.10.1"
