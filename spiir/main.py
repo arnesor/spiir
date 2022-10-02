@@ -1,28 +1,12 @@
-from pathlib import Path
-
 import numpy as np
 import openpyxl
 import pandas as pd
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
 
+year = 2022
 in_filename = "alle-poster-2022-09-03.csv"
-out_filename = "spiir-accounting-2022.xlsx"
-bugfix_filename = "bugfix-file.csv"
-
-
-def fix_splitting(dff: pd.DataFrame) -> pd.DataFrame:
-    if len(dff.index) < 2:
-        return dff
-    else:
-        if (
-            dff.iloc[0]["MainCategoryName"] != "Hide"
-            or dff.iloc[0]["CategoryName"] != "Exclude"
-        ):
-            remove_id = dff.iloc[0]["Id"]
-            with Path(bugfix_filename).open("a") as f:
-                f.write(f"{remove_id}\n")
-        return dff
+out_filename = f"spiir-accounting-{year}.xlsx"
 
 
 def format_spiir_sheet(filename: str) -> None:
@@ -48,13 +32,14 @@ def format_spiir_sheet(filename: str) -> None:
         sum_string = f"=SUM({col_letter}2:{col_letter}{max_row})"
         ws.cell(row=max_row + 1, column=col).value = sum_string
 
-    wb.save("formatted.xlsx")
+    wb.save(f"formatted-{year}.xlsx")
 
 
 def main():
     df = pd.read_csv(
         in_filename,
         encoding="latin_1",
+        index_col=0,
         sep=";",
         decimal=",",
         parse_dates=["Date", "CustomDate"],
@@ -85,40 +70,34 @@ def main():
         },
     )
 
-    # Calculate CorrectedDate
-    df["CorrectedDate"] = df["CustomDate"].where(df["CustomDate"].notnull(), df["Date"])
-
-    # Delete old bugfix file
-    Path(bugfix_filename).unlink(missing_ok=True)
-
-    # Identify rows that have to be fixed
-    df.groupby("SplitGroupId", as_index=False).apply(fix_splitting)
-
-    # Identify
-    df2 = df.set_index("Id")
-    bugfix_file = Path(bugfix_filename)
-    if bugfix_file.is_file():
-        remove_ids = bugfix_file.read_text().splitlines()
-        df2.drop(remove_ids, inplace=True)
-
-    df2.reset_index(drop=True, inplace=True)
-    print(f"Shape after fixing: {df2.shape}")
+    # There is a bug in Spiir which sometimes makes the original transaction in a
+    # split transaction visible. It should be hidden. Solve this be removing the
+    # original transaction (the first one) in each split group. Then add the non-split
+    # transactions.
+    split_group_df = df.groupby("SplitGroupId", as_index=False, group_keys=False).apply(
+        lambda group: group.iloc[1:]
+    )
+    no_split_group_df = df[df.SplitGroupId.isnull()]
+    df2 = pd.concat([split_group_df, no_split_group_df])
 
     df2 = df2[(df2["CategoryType"] != "Exclude") & (df2["Extraordinary"] == False)]
+    df2["CorrectedDate"] = df2["CustomDate"].where(
+        df2["CustomDate"].notnull(), df2["Date"]
+    )
+    df_year = df2[df2["CorrectedDate"].dt.year == year]
+    print(f"Shape after fixing: {df_year.shape}")
 
-    df2_2021 = df2[df2["CorrectedDate"].dt.year == 2022]
-
-    pivot2 = pd.pivot_table(
-        df2_2021,
+    category_table = pd.pivot_table(
+        df_year,
         values="Amount",
         index="CategoryName",
         columns=pd.Grouper(key="CorrectedDate", freq="M"),
         aggfunc=np.sum,
         fill_value=0,
     )
-    pivot2.columns = pd.to_datetime(pivot2.columns).strftime("%b %Y")
+    category_table.columns = pd.to_datetime(category_table.columns).strftime("%b %Y")
 
-    pivot2.to_excel(out_filename)
+    category_table.to_excel(out_filename)
     print("Finished writing spreadsheet.")
 
 
