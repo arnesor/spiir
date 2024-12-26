@@ -1,11 +1,12 @@
 import numpy as np
 import openpyxl
 import pandas as pd
+from decimal import Decimal
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
 
-year = 2022
-in_filename = "alle-poster-2022-09-03.csv"
+year = 2024
+in_filename = "alle-poster-2024-12-26.csv"
 out_filename = f"spiir-accounting-{year}.xlsx"
 
 
@@ -38,7 +39,6 @@ def format_spiir_sheet(filename: str) -> None:
 def main():
     df = pd.read_csv(
         in_filename,
-        encoding="latin_1",
         index_col=0,
         sep=";",
         decimal=",",
@@ -69,13 +69,16 @@ def main():
             "SplitGroupId": "string",
         },
     )
+#    df["Amount"] = df["Amount"].apply(Decimal)
+    df["Amount"] = df["Amount"].astype(float)
 
     # There is a bug in Spiir which sometimes makes the original transaction in a
     # split transaction visible. It should be hidden. Solve this be removing the
     # original transaction (the first one) in each split group. Then add the non-split
     # transactions.
     split_group_df = df.groupby("SplitGroupId", as_index=False, group_keys=False).apply(
-        lambda group: group.iloc[1:]
+        lambda group: group.iloc[1:],
+        include_groups = False
     )
     no_split_group_df = df[df.SplitGroupId.isnull()]
     df2 = pd.concat([split_group_df, no_split_group_df])
@@ -91,8 +94,8 @@ def main():
         df_year,
         values="Amount",
         index="CategoryName",
-        columns=pd.Grouper(key="CorrectedDate", freq="M"),
-        aggfunc=np.sum,
+        columns=pd.Grouper(key="CorrectedDate", freq="ME"),
+        aggfunc="sum",
         fill_value=0,
     )
     category_table.columns = pd.to_datetime(category_table.columns).strftime("%b %Y")
