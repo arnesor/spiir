@@ -8,10 +8,11 @@ readme = "README.md"
 packages = [{include = "spiir"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.14"
+python = ">=3.10,<3.14"
 numpy = ">=1.23.2"
 openpyxl = ">=3.0.10"
 pandas = ">=1.4.4"
+pyarrow = ">=18.1.0"
 
 [tool.poetry.group.dev.dependencies]
 black = ">=22.8.0"
@@ -24,6 +25,8 @@ pre-commit = ">=2.16.0"
 pre-commit-hooks = ">=4.1.0"
 ruff = ">=0.8.4"
 pytest = ">=8.3.4"
+cryptography = ">=44.0.0"
+python-dotenv = ">=1.0.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -45,7 +48,18 @@ extend-exclude = [
 
 # Ruff rules may be customized as desired: https://docs.astral.sh/ruff/rules/
 [tool.ruff.lint]
-select = ["ALL"]
+select = [
+    "A",    # prevent using keywords that clobber python builtins
+    "ANN",  # check type annotations
+    "B",    # bugbear: security warnings
+#    "D",    # documentation
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "ISC",  # implicit string concatenation
+    "I",    # sort imports
+    "UP",   # alert you when better syntax is available in your python version
+    "RUF",  # the ruff developer's own rules
+]
 ignore = [
     "ANN202", # Don't requiere return type annotation for private functions.
     "ANN401", # Allow type annotation with type Any.
