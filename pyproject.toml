@@ -8,18 +8,91 @@ readme = "README.md"
 packages = [{include = "spiir"}]
 
 [tool.poetry.dependencies]
-isort = "^5.10.1"
-numpy = "^1.23.2"
-openpyxl = "^3.0.10"
-pandas = "^1.4.4"
-python = ">=3.9,<3.11"
+python = ">=3.10,<3.14"
+numpy = ">=1.23.2"
+openpyxl = ">=3.0.10"
+pandas = ">=1.4.4"
+pyarrow = ">=18.1.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^22.8.0"
-mypy = "^0.971"
-openpyxl-stubs = "^0.1.21"
-pandas-stubs = "^1.4.3.220829"
+black = ">=22.8.0"
+coverage = { extras = ["toml"], version = ">=6.2" }
+darglint = ">=1.8.1"
+mypy = ">=0.971"
+openpyxl-stubs = ">=0.1.21"
+pandas-stubs = ">=1.4.3.220829"
+pre-commit = ">=2.16.0"
+pre-commit-hooks = ">=4.1.0"
+ruff = ">=0.8.4"
+pytest = ">=8.3.4"
+cryptography = ">=44.0.0"
+python-dotenv = ">=1.0.1"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+force-exclude = true  # Apply excludes to pre-commit
+show-fixes = true
+src = ["spiir", "tests"]
+target-version = "py311"  # Minimum Python version supported
+include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
+extend-exclude = [
+    "__pycache__",
+    "old",
+    ".ipynb_checkpoints",
+    "noxfile.py",
+    "docs/conf.py",
+]
+
+# Ruff rules may be customized as desired: https://docs.astral.sh/ruff/rules/
+[tool.ruff.lint]
+select = [
+    "A",    # prevent using keywords that clobber python builtins
+    "ANN",  # check type annotations
+    "B",    # bugbear: security warnings
+#    "D",    # documentation
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "ISC",  # implicit string concatenation
+    "I",    # sort imports
+    "UP",   # alert you when better syntax is available in your python version
+    "RUF",  # the ruff developer's own rules
+]
+ignore = [
+    "ANN202", # Don't requiere return type annotation for private functions.
+    "ANN401", # Allow type annotation with type Any.
+    "D100",   # Supress undocumented-public-module. Only doc of public api required.
+    "E402",   # Supress module-import-not-at-top-of-file, needed in jupyter notebooks.
+    "E501",   # Supress line-too-long warnings: trust black's judgement on this one.
+]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"  # You can also use "numpy".
+
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = ["classmethod", "validator", "root_validator", "pydantic.validator"]
+
+[tool.ruff.lint.per-file-ignores]
+"*/__init__.py" = ["F401"]
+"**/tests/*" = [
+    "ANN001",  # type annotations don't add value for test functions
+    "ANN002",  # type annotations don't add value for test functions
+    "ANN003",  # type annotations don't add value for test functions
+    "ANN201",  # type annotations don't add value for test functions
+    "ANN204",  # type annotations don't add value for test functions
+    "ANN205",  # type annotations don't add value for test functions
+    "ANN206",  # type annotations don't add value for test functions
+    "D100",    # docstrings are overkill for test functions
+    "D101",
+    "D102",
+    "D103",
+    "S101",    # asserts are encouraged in pytest
+]

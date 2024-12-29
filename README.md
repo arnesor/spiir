@@ -22,8 +22,3 @@ spendings, categorised by category and month.
 4. Save the file to the root directory of the cloned spir repo.
 
 ## Usage
-
-
-
-
-
