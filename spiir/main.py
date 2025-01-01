@@ -6,11 +6,12 @@ import pandas as pd
 from openpyxl.styles import Alignment
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
+from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.dimensions import ColumnDimension
 from openpyxl.worksheet.dimensions import DimensionHolder
 
 year = 2024
-in_filename = "alle-poster-2024-12-26.csv"
+in_filename = "transactions-2022-2024.csv"
 out_filename = f"spiir-accounting-{year}.xlsx"
 
 
@@ -101,7 +102,8 @@ def monthly_totals(df: pd.DataFrame) -> pd.DataFrame:
     category_table = pd.pivot_table(
         df,
         values="Amount",
-        index="CategoryName",
+        index=["CategoryName"],
+        # index=["MainCategoryName", "CategoryName"],
         columns=pd.Grouper(key="CorrectedDate", freq="ME"),
         aggfunc="sum",
         fill_value=0,
@@ -114,25 +116,101 @@ def monthly_totals(df: pd.DataFrame) -> pd.DataFrame:
     return category_table
 
 
+def monthly_overview(df: pd.DataFrame) -> pd.DataFrame:
+    var_budget = [
+        "Supermarket",
+        "Other Private Consumption",
+        "Housekeeping & Gardening",
+        "Remodeling & Repair",
+        "Clothing & Accessories",
+        "Movies, Music & Books",
+        "Hobby & Sports Equipment",
+        "Sports & Leisure",
+        "Mini-markets & Delicacies",
+        "Fuel",
+        "Online Services & Software",
+        "Furniture & Interior",
+        "Gifts & Charity",
+        "Restaurants & Bars",
+        "Games & Toys",
+        "Fast Food & Takeaway",
+        "Meal Plan",
+        "Parking",
+        "Cinema, Concerts & Entertainment",
+        "Pharmacy",
+        "Public Transport",
+        "Betting",
+        "Pets",
+    ]
+    # Finding rows with variable and fixed expending.
+    df_expense = df[
+        (df["CategoryType"] == "Expense")
+        & ((df["ExpenseType"] == "Variable") | (df["ExpenseType"] == "Fixed"))
+    ]
+    df_expense = df_expense.copy()  # Ensure the input DataFrame is not a slice
+
+    df_expense["Amount"] = df_expense["Amount"].apply(
+        Decimal
+    )  # Convert to Decimal to avoid floating point precision problems
+
+    category_table = pd.pivot_table(
+        df_expense,
+        values="Amount",
+        index=["ExpenseType"],
+        columns=pd.Grouper(key="CorrectedDate", freq="ME"),
+        aggfunc="sum",
+        fill_value=0,
+    )
+
+    # Add a row for 'var_budget', which is the sum of the relevant categories
+    df_var_budget = df_expense[df_expense["CategoryName"].isin(var_budget)].copy()
+    df_var_non_budget = df_expense[  # noqa: F841
+        ~df_expense["CategoryName"].isin(var_budget)
+        & (df_expense["ExpenseType"] == "Variable")
+    ].copy()
+
+    var_budget_total = pd.pivot_table(
+        df_var_budget,
+        values="Amount",
+        index=[],
+        columns=pd.Grouper(key="CorrectedDate", freq="ME"),
+        aggfunc="sum",
+        fill_value=0,
+    )
+
+    # Add 'VarBudget' as the new row to the pivot table
+    category_table.loc["Variable, BudgetCat"] = (
+        [] if var_budget_total.empty else var_budget_total.values.tolist()[0]
+    )
+
+    category_table.columns = pd.to_datetime(category_table.columns).strftime("%b %Y")
+
+    # Convert back to float after calculations are done
+    for col in category_table.columns:
+        category_table[col] = category_table[col].astype(float)
+    return category_table
+
+
 def format_spiir_sheet(filename: str) -> None:
     wb = openpyxl.load_workbook(filename)
     ws = wb["Sheet1"]
+    ws.title = "Categories"
     max_row = ws.max_row
     max_col = ws.max_column
 
-    # Add row sums
-    row_sum_header = ws.cell(row=max_row + 1, column=1, value="Sum")
-    row_sum_header.font = Font(bold=True)
-    row_sum_header.alignment = Alignment(horizontal="center")
+    # Add col sums
+    col_sum_header = ws.cell(row=max_row + 1, column=1, value="Sum")
+    col_sum_header.font = Font(bold=True)
+    col_sum_header.alignment = Alignment(horizontal="center")
     for col in range(ws.min_column + 1, max_col + 1):
         col_letter = get_column_letter(col)
         sum_formula = f"=SUM({col_letter}2:{col_letter}{max_row})"
         ws.cell(row=max_row + 1, column=col).value = sum_formula
 
-    # Add col sums
-    col_sum_header = ws.cell(row=1, column=max_col + 1, value="Sum")
-    col_sum_header.font = Font(bold=True)
-    col_sum_header.alignment = Alignment(horizontal="center")
+    # Add row sums
+    row_sum_header = ws.cell(row=1, column=max_col + 1, value="Sum")
+    row_sum_header.font = Font(bold=True)
+    row_sum_header.alignment = Alignment(horizontal="center")
     for row in range(ws.min_row + 1, max_row + 2):
         col_letter = get_column_letter(max_col)
         sum_formula = f"=SUM(B{row}:{col_letter}{row})"
@@ -147,6 +225,7 @@ def format_spiir_sheet(filename: str) -> None:
 
     dim_holder = DimensionHolder(worksheet=ws)
     dim_holder["A"] = ColumnDimension(ws, min=1, max=1, width=32)
+    #    dim_holder["B"] = ColumnDimension(ws, min=2, max=2, width=32)
     for col in range(ws.min_column + 1, ws.max_column + 1):
         dim_holder[get_column_letter(col)] = ColumnDimension(
             ws, min=col, max=col, width=9
@@ -154,6 +233,41 @@ def format_spiir_sheet(filename: str) -> None:
     ws.column_dimensions = dim_holder
 
     wb.save(f"formatted-{year}.xlsx")
+
+
+def add_spiir_overview(filename: str, df: pd.DataFrame) -> None:
+    wb = openpyxl.load_workbook(filename)
+    ws = wb.create_sheet(title="Overview")
+
+    for r in dataframe_to_rows(df, index=True, header=True):
+        ws.append(r)
+    ws.delete_rows(idx=2, amount=1)
+
+    # Add col sums
+    max_row = ws.max_row
+    ws.cell(row=max_row + 1, column=1, value="Variable, non BudgetCat")
+    for col in range(ws.min_column + 1, ws.max_column + 1):
+        col_letter = get_column_letter(col)
+        subtract_formula = f"={col_letter}3-{col_letter}{max_row}"
+        ws.cell(row=max_row + 1, column=col).value = subtract_formula
+
+    my_format = "# ##0;-# ##0;0;@"
+    for row in ws.iter_rows(
+        min_row=2, max_row=ws.max_row, min_col=2, max_col=ws.max_column
+    ):
+        for cell in row:
+            cell.number_format = my_format
+
+    dim_holder = DimensionHolder(worksheet=ws)
+    dim_holder["A"] = ColumnDimension(ws, min=1, max=1, width=32)
+    #    dim_holder["B"] = ColumnDimension(ws, min=2, max=2, width=32)
+    for col in range(ws.min_column + 1, ws.max_column + 1):
+        dim_holder[get_column_letter(col)] = ColumnDimension(
+            ws, min=col, max=col, width=9
+        )
+    ws.column_dimensions = dim_holder
+
+    wb.save(filename)
 
 
 def main(filepath: Path = Path(__file__).parent / in_filename) -> pd.DataFrame:
@@ -164,8 +278,10 @@ def main(filepath: Path = Path(__file__).parent / in_filename) -> pd.DataFrame:
     print(f"Shape after fixing: {df_year.shape}")
 
     category_table = monthly_totals(df_year)
+    overview = monthly_overview(df_year)
     category_table.to_excel(out_filename)
     format_spiir_sheet(out_filename)
+    add_spiir_overview(f"formatted-{year}.xlsx", overview)
     print("Finished writing spreadsheet.")
     # category_table.to_parquet(Path(__file__).parent / "month_facit.parquet")
     return category_table
