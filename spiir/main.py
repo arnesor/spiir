@@ -10,8 +10,8 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.dimensions import ColumnDimension
 from openpyxl.worksheet.dimensions import DimensionHolder
 
-year = 2024
-in_filename = "transactions-2022-2024.csv"
+year = 2025
+in_filename = "transactions-2022-2025.csv"
 out_filename = f"spiir-accounting-{year}.xlsx"
 
 
