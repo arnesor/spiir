@@ -1,3 +1,4 @@
+import argparse
 from decimal import Decimal
 from pathlib import Path
 
@@ -9,10 +10,6 @@ from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.dimensions import ColumnDimension
 from openpyxl.worksheet.dimensions import DimensionHolder
-
-year = 2025
-in_filename = "transactions-2022-2025-2.csv"
-out_filename = f"spiir-accounting-{year}.xlsx"
 
 
 def read_transactions_file(filepath: Path) -> pd.DataFrame:
@@ -185,7 +182,7 @@ def monthly_overview(df: pd.DataFrame) -> pd.DataFrame:
     return category_table
 
 
-def format_spiir_sheet(filename: str) -> None:
+def format_spiir_sheet(filename: str, year: int) -> None:
     wb = openpyxl.load_workbook(filename)
     ws = wb["Sheet1"]
     ws.title = "Categories"
@@ -264,7 +261,19 @@ def add_spiir_overview(filename: str, df: pd.DataFrame) -> None:
     wb.save(filename)
 
 
-def main(filepath: Path = Path(__file__).parent / in_filename) -> pd.DataFrame:
+def main(
+    in_filename: str | Path = "transactions-2022-2025.csv", year: int = 2024
+) -> pd.DataFrame:
+    if isinstance(in_filename, Path):
+        filepath = in_filename
+    else:
+        filepath = Path(in_filename)
+        if not filepath.is_absolute() and not filepath.exists():
+            filepath = Path(__file__).parent / in_filename
+
+    out_filename = f"spiir-accounting-{year}.xlsx"
+    formatted_filename = f"formatted-{year}.xlsx"
+
     transactions_df = read_transactions_file(filepath)
     df_corrected = fix_split_transactions(transactions_df)
     df_base = remove_excluded_and_extraordinary(df_corrected)
@@ -274,12 +283,23 @@ def main(filepath: Path = Path(__file__).parent / in_filename) -> pd.DataFrame:
     category_table = monthly_totals(df_year)
     overview = monthly_overview(df_year)
     category_table.to_excel(out_filename)
-    format_spiir_sheet(out_filename)
-    add_spiir_overview(f"formatted-{year}.xlsx", overview)
+    format_spiir_sheet(out_filename, year)
+    add_spiir_overview(formatted_filename, overview)
     print("Finished writing spreadsheet.")
     # category_table.to_parquet(Path(__file__).parent / "month_facit.parquet")
     return category_table
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Process Spiir transactions.")
+    parser.add_argument(
+        "--year", type=int, default=2024, help="Year to process (default: 2024)"
+    )
+    parser.add_argument(
+        "--in_filename",
+        type=str,
+        default="transactions-2022-2025.csv",
+        help="Input CSV filename (default: transactions-2022-2025.csv)",
+    )
+    args = parser.parse_args()
+    main(in_filename=args.in_filename, year=args.year)
