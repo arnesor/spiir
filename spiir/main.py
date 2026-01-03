@@ -11,7 +11,7 @@ from openpyxl.worksheet.dimensions import ColumnDimension
 from openpyxl.worksheet.dimensions import DimensionHolder
 
 year = 2025
-in_filename = "transactions-2022-2025.csv"
+in_filename = "transactions-2022-2025-2.csv"
 out_filename = f"spiir-accounting-{year}.xlsx"
 
 
@@ -54,23 +54,17 @@ def fix_split_transactions(df: pd.DataFrame) -> pd.DataFrame:
     """Fix errors in split transactions.
 
     There is a bug in Spiir which sometimes makes the original transaction in a
-    split transaction visible. It should be hidden. Solve this be removing the
-    original transaction (the first one) in each split group. Then add the non-split
-    transactions.
+    split transaction visible. It should be hidden. Solve this by removing the
+    original transaction (identified by ID == SplitGroupId) in each split group.
 
     Args:
         df: DataFrame with raw Spiir transaction data. Expected to have a column called
-            "SplitGroupId" which indicates split groups. Transactions with null values
-            in "SplitGroupId" are considered as non-split transactions.
+            "SplitGroupId" which indicates split groups.
 
     Returns:
-        A DatFrame with the fixed list of transactions.
+        A DataFrame with the fixed list of transactions.
     """
-    split_group_df = df.groupby("SplitGroupId", as_index=False, group_keys=False).apply(
-        lambda group: group.iloc[1:], include_groups=False
-    )
-    no_split_group_df = df[df.SplitGroupId.isnull()]
-    return pd.concat([split_group_df, no_split_group_df])
+    return df[df["SplitGroupId"].isna() | (df.index != df["SplitGroupId"])]
 
 
 def remove_excluded_and_extraordinary(df: pd.DataFrame) -> pd.DataFrame:
@@ -180,7 +174,7 @@ def monthly_overview(df: pd.DataFrame) -> pd.DataFrame:
 
     # Add 'VarBudget' as the new row to the pivot table
     category_table.loc["Variable, BudgetCat"] = (
-        [] if var_budget_total.empty else var_budget_total.values.tolist()[0]
+        [] if var_budget_total.empty else var_budget_total.to_numpy().tolist()[0]
     )
 
     category_table.columns = pd.to_datetime(category_table.columns).strftime("%b %Y")
