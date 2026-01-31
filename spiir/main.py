@@ -202,10 +202,19 @@ def format_spiir_sheet(filename: str, year: int) -> None:
     row_sum_header = ws.cell(row=1, column=max_col + 1, value="Sum")
     row_sum_header.font = Font(bold=True)
     row_sum_header.alignment = Alignment(horizontal="center")
+
+    # Add row averages
+    row_avg_header = ws.cell(row=1, column=max_col + 2, value="Average")
+    row_avg_header.font = Font(bold=True)
+    row_avg_header.alignment = Alignment(horizontal="center")
+
     for row in range(ws.min_row + 1, max_row + 2):
         col_letter = get_column_letter(max_col)
         sum_formula = f"=SUM(B{row}:{col_letter}{row})"
         ws.cell(row=row, column=max_col + 1).value = sum_formula
+
+        avg_formula = f'=AVERAGEIF(B{row}:{col_letter}{row}, "<>")'
+        ws.cell(row=row, column=max_col + 2).value = avg_formula
 
     my_format = "# ##0;-# ##0;0;@"
     for row in ws.iter_rows(
